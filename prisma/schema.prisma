@@ -1,0 +1,107 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum GradingSystem {
+  GPA
+  CWA
+}
+
+enum TAArchetype {
+  STRICT
+  COOL
+  OVERWORKED
+}
+
+model Campus {
+  id            String        @id @default(uuid())
+  name          String        @unique
+  country       String
+  gradingSystem GradingSystem
+  locations     Location[]
+  students      Player[]
+  courses       Course[]
+  createdAt     DateTime      @default(now())
+}
+
+model Player {
+  id             String             @id @default(uuid())
+  username       String             @unique
+  campusId       String
+  campus         Campus             @relation(fields: [campusId], references: [id])
+  academicScore  Float              @default(3.00)
+  energy         Int                @default(100)
+  balance        Float              @default(500.00)
+  socialRep      Int                @default(50)
+  currentX       Float              @default(0.0)
+  currentY       Float              @default(0.0)
+  attendances    Attendance[]
+  taRelations    PlayerTARelation[]
+  createdAt      DateTime           @default(now())
+}
+
+model Location {
+  id       String              @id @default(uuid())
+  name     String
+  type     String
+  campusId String
+  campus   Campus              @relation(fields: [campusId], references: [id])
+  lectures Lecture[]
+  tas      TeachingAssistant[]
+}
+
+model Course {
+  id          String    @id @default(uuid())
+  code        String
+  title       String
+  creditHours Int
+  campusId    String
+  campus      Campus    @relation(fields: [campusId], references: [id])
+  lectures    Lecture[]
+}
+
+model TeachingAssistant {
+  id         String             @id @default(uuid())
+  name       String
+  archetype  TAArchetype
+  locationId String
+  location   Location           @relation(fields: [locationId], references: [id])
+  players    PlayerTARelation[]
+}
+
+model PlayerTARelation {
+  id         String            @id @default(uuid())
+  playerId   String
+  player     Player            @relation(fields: [playerId], references: [id])
+  taId       String
+  ta         TeachingAssistant @relation(fields: [taId], references: [id])
+  favorLevel Int               @default(0)
+
+  @@unique([playerId, taId])
+}
+
+model Lecture {
+  id          String       @id @default(uuid())
+  courseId    String
+  course      Course       @relation(fields: [courseId], references: [id])
+  locationId  String
+  location    Location     @relation(fields: [locationId], references: [id])
+  startTime   DateTime
+  endTime     DateTime
+  attendances Attendance[]
+}
+
+model Attendance {
+  id        String   @id @default(uuid())
+  playerId  String
+  player    Player   @relation(fields: [playerId], references: [id])
+  lectureId String
+  lecture   Lecture  @relation(fields: [lectureId], references: [id])
+  attended  Boolean  @default(false)
+  quizScore Float?
+}
